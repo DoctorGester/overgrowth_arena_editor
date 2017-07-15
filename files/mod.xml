@@ -1,0 +1,20 @@
+<? xml version="1.0" ?>
+<Mod>
+    <Id>arena-editor</Id> 
+    <Name>Arena Editor UI Mod</Name> 
+    <Category>Script</Category>
+    <Thumbnail>Data/Images/arena_editor/thumb.jpg</Thumbnail>
+    <PreviewImage>Data/Images/arena_editor/full.jpg</PreviewImage>
+    <Description>Adds a user friendly arena editor like in previous alphas. To use go into an arena level an find an arena battle object (two green crossed swords with a green circle behind them). Selecting it will bring up the arena editor.
+
+If you want to make your own arena levels you can refer to https://youtu.be/S-H7P6tmCAc?t=90 this video.
+    </Description>
+    <Version>1.0.1</Version>
+    <Author>DoctorGester</Author>
+    <Tag>b4</Tag>
+    <Tag>Editor</Tag>
+    <Tag>Script</Tag>
+    <SupportedVersion>b4</SupportedVersion>
+    <NeedsRestart>false</NeedsRestart>
+    <LevelHookFile>Data/Scripts/arena_editor/arena_editor.as</LevelHookFile>
+</Mod>
