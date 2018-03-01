@@ -434,6 +434,10 @@ void DrawGUI() {
     int battleEditorId = -1;
 
     for (uint i = 0; i < indices.size(); i++) {
+        if (!ObjectExists(i)) {
+            continue;
+        }
+        
         auto object = ReadObjectFromID(indices[i]);
         auto params = object.GetScriptParams();
 
