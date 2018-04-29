@@ -1,4 +1,3 @@
-void Init(string levelName) {}
 void ReceiveMessage(string msg) {}
 void Update(int paused) {  }
 void SetWindowDimensions(int w, int h){}
@@ -10,6 +9,7 @@ const array<string> weapons = {
     "Knife",
     "Big sword",
     "Sword",
+    "Spear",
     "Any"
 };
 
@@ -18,20 +18,114 @@ const array<string> weaponsValues = {
     "knife",
     "big_sword",
     "sword",
+    "spear",
     "any"
+};
+
+const array<string> weaponsPaths = {
+    "",
+    "weap_knife",
+    "weap_big_sword",
+    "weap_sword",
+    "weap_spear",
+    ""
 };
 
 const array<string> types = {
     "Any type",
     "Guard",
-    "Raider"
+    "Raider",
+    "Civilian"
 };
 
 const array<string> typesValues = {
     "any",
     "guard",
-    "raider"
+    "raider",
+    "civ"
 };
+
+const array<string> typesPaths = {
+    "",
+    "char_guard",
+    "char_raider",
+    "char_civ"
+};
+
+array<TextureAssetRef> typesImages;
+array<TextureAssetRef> weaponsImages;
+
+TextureAssetRef anyWeapon = LoadTexture("Data/Textures/ui/stealth_debug/question_themed.png");
+TextureAssetRef anyType = LoadTexture("Data/UI/spawner/thumbs/Character/rabbot_actor.png", TextureLoadFlags_NoMipmap | TextureLoadFlags_NoReduce);
+
+void Init(string levelName) {
+    typesImages.resize(typesPaths.length());
+    weaponsImages.resize(weaponsPaths.length());
+
+    array<SpawnerItem>@ all_spawner_items = ModGetAllSpawnerItems(false);
+
+    for (uint item_index = 0; item_index < all_spawner_items.length(); item_index++) {
+        SpawnerItem item = all_spawner_items[item_index];
+        string item_path = item.GetPath();
+        string category = item.GetCategory();
+
+        if (category == "Character") {
+            for (uint type_index = 0; type_index < typesPaths.length(); type_index++) {
+                string path = typesPaths[type_index];
+
+                if (path.length() == 0) {
+                    continue;
+                }
+
+                string object_path = level.GetPath(path);
+
+                if (item_path == object_path) {
+                    if (typesImages[type_index].IsValid()) {
+                        typesImages[type_index].Clear();
+                    }
+
+                    typesImages[type_index] = LoadTexture(item.GetThumbnail(), TextureLoadFlags_NoMipmap | TextureLoadFlags_NoReduce);
+
+                    break;
+                }
+            }
+        }
+
+        if (category == "Object") {
+            for (uint weapon_index = 0; weapon_index < weaponsPaths.length(); weapon_index++) {
+                string path = weaponsPaths[weapon_index];
+
+                if (path.length() == 0) {
+                    continue;
+                }
+
+                string object_path = level.GetPath(path);
+
+                if (item_path == object_path) {
+                    if (weaponsImages[weapon_index].IsValid()) {
+                        weaponsImages[weapon_index].Clear();
+                    }
+
+                    weaponsImages[weapon_index] = LoadTexture(item.GetThumbnail(), TextureLoadFlags_NoMipmap | TextureLoadFlags_NoReduce);
+
+                    break;
+                }
+            }
+        }
+    }
+
+    // We are hardcoding guard thumbnail there because multi_arena_paths.xml contains a stupid value
+    for (uint type_index = 0; type_index < typesPaths.length(); type_index++) {
+        if (typesValues[type_index] == "guard") {
+            typesImages[type_index] = LoadTexture("Data/UI/spawner/thumbs/Character/IGF_GuardActor_reddy.png", TextureLoadFlags_NoMipmap | TextureLoadFlags_NoReduce);
+            break;
+        }
+    }
+}
+
+void PostScriptReload() {
+    Init("");
+}
 
 class Editor {
     array<Battle@> battles;
@@ -82,8 +176,10 @@ class Editor {
                 }
 
                 ImGui_SameLine();
+
+                string battleNameText = battle.name + "(" + battle.teams.length() + " teams, " + battle.items.length() + " items)";
                 
-                if (ImGui_TreeNode("battle" + i, battle.name)) {
+                if (ImGui_TreeNode("battle" + i, battleNameText)) {
                     battle.draw(locations);
                     ImGui_TreePop();
                 }
@@ -266,6 +362,7 @@ class Item {
         }
 
         ImGui_PushItemWidth(200);
+        ImGui_BeginGroup();
 
         if (ImGui_Combo("Spawn Point", selectedLocation, locations)) {
             spawn = locations[selectedLocation];
@@ -275,7 +372,22 @@ class Item {
             type = weaponsValues[selectedWeapon];
         }
 
+        ImGui_EndGroup();
         ImGui_PopItemWidth();
+
+        float image_height = ImGui_GetItemRectSize().y;
+
+        ImGui_SameLine();
+        ImGui_Dummy(vec2(20, 0));
+        ImGui_SameLine();
+
+        if (weaponsImages[selectedWeapon].IsValid()) {
+            ImGui_Image(weaponsImages[selectedWeapon], vec2(image_height * 2, image_height), uv0: vec2(0, 0.25), uv1: vec2(1, 0.75));
+        } else if (weaponsValues[selectedWeapon] == "any") {
+            ImGui_Image(anyWeapon, vec2(image_height, image_height));
+        } else {
+            ImGui_NewLine();
+        }
     }
 }
 
@@ -387,6 +499,7 @@ class Member {
         }
 
         ImGui_PushItemWidth(200);
+        ImGui_BeginGroup();
 
         if (ImGui_Combo("Spawn Point", selectedLocation, locations)) {
             spawn = locations[selectedLocation];
@@ -401,6 +514,30 @@ class Member {
         }
 
         ImGui_Checkbox("Can spawn a player", player);
+        ImGui_EndGroup();
+
+        float image_height = ImGui_GetItemRectSize().y;
+        vec2 image_size = vec2(image_height, image_height);
+
+        ImGui_SameLine();
+
+        ImGui_BeginGroup();
+
+        if (typesImages[selectedType].IsValid()) {
+            ImGui_Image(typesImages[selectedType], image_size);
+        } else if (typesValues[selectedType] == "any") {
+            ImGui_Image(anyType, image_size);
+        }
+
+        ImGui_SameLine();
+
+        if (weaponsImages[selectedWeapon].IsValid()) {
+            ImGui_Image(weaponsImages[selectedWeapon], image_size);
+        } else if (weaponsValues[selectedWeapon] == "any") {
+            ImGui_Image(anyWeapon, image_size);
+        }
+
+        ImGui_EndGroup();
 
         ImGui_PopItemWidth();
     }
